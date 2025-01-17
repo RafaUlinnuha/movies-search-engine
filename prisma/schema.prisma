@@ -1,0 +1,18 @@
+datasource db {
+    provider = "mongodb"
+    url      = env("MONGODB_URI")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model movies {
+    id          String   @id @default(auto()) @map("_id") @db.ObjectId
+    title       String
+    genres      String[]
+    cast        String[]
+    released    DateTime?
+    rated       String?
+    poster      String?
+}

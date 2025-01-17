@@ -23,12 +23,10 @@ export const getDataFromCacheOrDb = async <T extends Movie>(
   const missingKeys: string[] = [];
 
   try {
-    console.log(keys);
     const cachedData = await redisClient.get(keys);
-    console.log(cachedData);
 
     if (cachedData) {
-      console.log(`Data for key "${keys}" retrieved from Redis`);
+      logger.info(`Data for key "${keys}" retrieved from Redis`);
       results.push(JSON.parse(cachedData) as T);
     } else {
       missingKeys.push(keys);

@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import BounceLoader from "react-spinners/BounceLoader";
 import { useState } from "react";
 
 export default function Home() {
   const [input, setInput] = useState<string>("");
+  const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<{
-    results: Array<{
+    result: Array<{
       id: number;
       title: string;
       genres: string[];
@@ -15,27 +17,43 @@ export default function Home() {
       rated: string;
       poster: string;
     }>;
-  }>({ results: [] });
+  }>({ result: [] });
 
   const fetchData = async () => {
-    if (!input) return setSearchResults({ results: [] });
+    if (!input) {
+      setSearchResults({ result: [] });
+      return;
+    }
 
-    const response = await fetch(`http://localhost:3000/api/movies`, {
+    setLoading(true);
+
+    await fetch(`http://localhost:3000/api/movies`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(input),
-    });
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          console.error(
+            "failed to fetch search results :( ",
+            response.statusText
+          );
+          setLoading(false);
+          return;
+        }
 
-    if (!response.ok) {
-      console.error("failed to fetch search results :( ", response.statusText);
-      return;
-    }
+        const data = await response.json();
 
-    const data = await response.json();
-
-    setSearchResults(data);
+        setSearchResults(data);
+      })
+      .catch((e) => {
+        console.log(e);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
@@ -60,33 +78,42 @@ export default function Home() {
             <button onClick={fetchData}>Submit</button>
           </span>
         </div>
-        {searchResults?.results.map((data, index) => (
-          <a
-            key={index}
-            href="#"
-            className="flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow md:flex-row md:w-1/2 hover:bg-gray-100"
-          >
-            <Image
-              className="object-cover w-1/3 h-auto rounded-t-lg md:rounded-none md:rounded-s-lg"
-              src={data.poster}
-              width={200}
-              height={100}
-              alt="Movie Poster"
-            />
-            <div className="flex flex-col justify-between p-4 leading-normal">
-              <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">
-                {data.title}
-              </h5>
-              {data.cast.map((casts, index) => (
-                <p key={index} className="mb-3 font-normal text-gray-700">
-                  {casts}
-                </p>
-              ))}
-              <p className="mb-3 font-normal text-gray-700">{data.released}</p>
-              <p className="mb-3 font-normal text-gray-700">{data.rated}</p>
-            </div>
-          </a>
-        ))}
+        {loading ? (
+          <div className="flex items-center pt-8">
+            <BounceLoader color="#F2EFE5" />
+          </div>
+        ) : (
+          <>
+            {searchResults?.result.map((data, index) => (
+              <div
+                key={index}
+                className="flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow md:flex-row md:w-1/2"
+              >
+                <Image
+                  className="object-cover w-1/3 h-auto rounded-t-lg md:rounded-none md:rounded-s-lg"
+                  src={data.poster}
+                  width={200}
+                  height={100}
+                  alt="Movie Poster"
+                />
+                <div className="flex flex-col justify-between p-4 leading-normal">
+                  <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">
+                    {data.title}
+                  </h5>
+                  {data.cast.map((casts, index) => (
+                    <p key={index} className="mb-3 font-normal text-gray-700">
+                      {casts}
+                    </p>
+                  ))}
+                  <p className="mb-3 font-normal text-gray-700">
+                    {data.released}
+                  </p>
+                  <p className="mb-3 font-normal text-gray-700">{data.rated}</p>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </main>
   );

@@ -36,6 +36,8 @@ export async function POST(req: Request) {
 
     const { results, missingKeys } = await getDataFromCacheOrDb(keys);
 
+    let result = results;
+
     let missingMovies = [];
     if (missingKeys.length > 0) {
       missingMovies = await prisma.movies.findMany({
@@ -46,10 +48,12 @@ export async function POST(req: Request) {
         },
       });
 
+      result = missingMovies;
+
       await cacheMovies(missingMovies);
     }
 
-    return NextResponse.json({ results }, { status: 200 });
+    return NextResponse.json({ result }, { status: 200 });
   } catch (error) {
     console.log(error);
     logger.error("Error: ", error);
